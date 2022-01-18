@@ -1,4 +1,28 @@
-FROM blacklabelops/alpine:3.8
+FROM alpine:3.8
+
+ENV LOGROTATE_HOME=/var/logrotate
+
+ARG TARGETARCH
+
+RUN apk upgrade --update && \
+    apk add \
+      bash \
+      tini \
+      su-exec \
+      curl && \
+    # Network fix
+    echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
+    # Wait for it - Waiting For Available Ports And Servers
+    curl https://raw.githubusercontent.com/vishnubob/wait-for-it/55c54a5abdfb32637b563b28cc088314b162195e/wait-for-it.sh -o /usr/bin/wait-for-it && \
+    # Blacklabelops Feature Script Folder
+    mkdir -p ${LOGROTATE_HOME} && \
+    # Clean up
+    apk del curl && \
+    rm -rf /var/cache/apk/* && \
+    rm -rf /tmp/* && \
+    rm -rf /var/log/*
+
+COPY imagescripts/ ${LOGROTATE_HOME}/
 MAINTAINER Steffen Bleul <sbl@blacklabelops.com>
 
 # logrotate version (e.g. 3.9.1-r0)
@@ -15,18 +39,15 @@ RUN export CONTAINER_USER=logrotate && \
     apk add --update \
       tar \
       gzip \
-      wget \
       tzdata && \
     if  [ "${LOGROTATE_VERSION}" = "latest" ]; \
       then apk add logrotate ; \
       else apk add "logrotate=${LOGROTATE_VERSION}" ; \
     fi && \
     mkdir -p /usr/bin/logrotate.d && \
-    wget --no-check-certificate -O /tmp/go-cron.tar.gz https://github.com/michaloo/go-cron/releases/download/v0.0.2/go-cron.tar.gz && \
-    tar xvf /tmp/go-cron.tar.gz -C /usr/bin && \
-    apk del \
-      wget && \
     rm -rf /var/cache/apk/* && rm -rf /tmp/*
+
+COPY dist/go-cron-${TARGETARCH} /usr/bin/go-cron
 
 # environment variable for this container
 ENV LOGROTATE_OLDDIR= \

@@ -77,7 +77,7 @@ if [ "$1" = 'cron' ]; then
     exit
   fi
   
-  exec /usr/bin/go-cron "5 1 0 * * *" /bin/bash -c 'find /storage/logs -type f -mtime +90 -name "*.log" -exec rm -f {} \;' &
+  exec /usr/bin/go-cron "5 1 0 * * *" /bin/bash -c 'find /storage/logs -type f -mtime +90 -name "*.log*" -exec rm -f {} \;' &
   exec /usr/bin/go-cron "${logrotate_croninterval}" /bin/bash -c "${logrotate_cron_timetable}"
 fi
 
